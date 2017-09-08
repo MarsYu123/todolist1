@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>demo1</title>
+    <link rel="stylesheet" href="css/index.css">
+    <script src="script/vue.js"></script>
+    <script src="script/jquery.js"></script>
+</head>
+<body>
+<!--//父组件传子组件-->
+<!--<div id="app">
+    &lt;!&ndash;子组件必须绑定接受的属性为父组件的变量&ndash;&gt;
+    <mymodel v-bind:msg="b"></mymodel>
+    <input v-model="b">
+</div>
+<script>
+    Vue.component('mymodel',{
+        //使用props接受父组件传输值
+        props:['msg'],
+        template:
+        '<div><p v-for="i in msg">{{msg}}</p></div>',
+        data:function () {
+            return {
+                aa:''
+            }
+        },
+    });
+    var vm=new Vue({
+        el:'#app',
+        data:{
+            a:'1',
+            b:'',
+            d:{
+                a:1,b:2,c:3
+            }
+        }
+    })
+</script>-->
+<style>
+    .input::after{
+        content: '';
+        display: block;
+    }
+</style>
+<div id="b">
+    
+    <h1 class="daiban">添加待办事项，按回车确认</h1>
+    <!--子组件向父组件传值，一定要记住，委托自定义事件放在子模板中-->
+    <model v-on:eee="msg"></model>
+    <div class="title">
+        <h4>待办事项</h4>
+        <button @click="clear" class="clear">
+            清空缓存
+        </button>
+        <button @click="del" class="del">
+            清除已完成
+        </button>
+    </div>
+    <!--vue2.0的将$index更新为(item,index)这种方式-->
+    <li v-for="(i,index) in li"
+        class="list"
+        :class="{'active':color[index]}">
+        <div class="lists">
+                <span>
+                    {{i}}
+                </span>
+        </div>
+        <div @click="check(index,i)" class="end">
+                <span >
+                    {{ms[index]?a:b}}
+                </span>
+        </div>
+    </li>
+</div>
+<script>
+    //先定义一个数组用于存放列表内容,在定义一个字符串读取缓存
+    var arr=[],
+        _color=[];
+    /*触发一个自定义函数，函数功能为载入时判断缓存情况，
+    如果有则加载缓存，如果没有清空数组*/
+    arrlocal();
+    function arrlocal() {
+        var string=localStorage.getItem("localname");
+        var stcolor=localStorage.getItem("localcolor")
+        //如果有缓存，就将缓存转换为数组
+        if (string){
+            arr=string.split(",");
+        }
+        else{
+            arr = [];
+        }
+        if(stcolor){
+            _color = stcolor.split(",");
+        }else{
+            _color = [];
+        }
+    }
+    //注册组件
+    Vue.component('model',{
+        template:
+        '<div :class="{active}" class="inp">' +
+        '<input v-model="aa"' +
+        ' v-on:keyup.13="dian"' +
+        ' @focus="focus" ' +
+        ' @blur="blur"' +
+        ' class="input">' +
+        '</div>',
+        data(){
+            return{
+                aa:'',
+                active:''
+            }
+        },
+        methods:{
+            focus() {
+                this.active ="active"
+            },
+            blur() {
+                this.active=''
+            },
+            //在回车事件中，将列表框的值发送父组件，并将输入框清空
+            dian:function () {
+                if (this.aa==''){
+                    alert("请输入待办事项")
+                }else{
+                    this.$emit('eee',this.aa);
+                    this.aa='';
+                }
+            }
+        }
+    });
+    new Vue({
+        el:'#b',
+        data:{
+            li:arr,
+            color:_color,
+            ms:_color,
+            a:'已完成',
+            b:'未完成',
+            s:[],
+            isflag:''
+        },
+        methods:{
+            /*通过自定义事件接收列表值，将每次输入的值添加到数组最前列
+            并且存入缓存local中。注意，localStorage会强制转换类型为string
+             */
+            msg:function (msg) {
+                arr.unshift(msg);
+                _color.unshift('');
+                localStorage.setItem("localname",arr);
+                localStorage.setItem("localcolor",_color)
+            },
+            /*完成事件接收v-for循环时的下标，将下标存储在color对象中，
+            并将当前点击的对象存储变量，如果对象值不为true则添加，
+            如果有则取消，做一个切换效果。*/
+            check:function (index) {
+                var _click=this.color[index];
+                if (!_click == true){
+                    this.$set(this.color,index, true);
+                    this.ms[index] = true;
+                    _color=this.color;
+                }else {
+                    this.$set(this.color,index, false);
+                    this.ms[index] = '';
+                    _color=(this.color);
+                    this.li[index].isflag=false
+                }
+                localStorage.setItem("localcolor",this.color);
+                console.log(this.li)
+            },
+            /*清除事件，将清除缓存以及数组清零*/
+            clear:function () {
+                localStorage.clear();
+                arrlocal();
+                this.li = arr;
+                this.color=_color;
+            },
+            del:function () {
+                /*var val=[];
+                for (var i in this.color){
+                    if (this.color[i]==true||this.color[i]=="true"){
+                        console.log(i)
+                        val.push(this.li[i])
+                    }
+                }
+                for (var i=0;i<val.length;i++){
+                    this.li.splice($.inArray(val[i],this.li),1);
+                    console.log(val[i])
+                }
+                this.color=[];
+                localStorage.setItem("localname",this.li);
+                localStorage.removeItem("localcolor");
+                this.ms =[];
+                this.s = []*/
+                
+                for (var i in this.color){
+                    if (this.color[i]==true||this.color[i]=="true"){
+                        delete this.li[i]
+                    }
+                }
+                for (var i=0;i<this.li.length;i++){
+                    if (this.li[i]==''||this.li[i]==undefined){
+                        this.li.splice(i, 1);
+                        i-=1;
+                        console.log(this.li)
+                    }
+                }
+                this.color=[];
+                localStorage.setItem("localname",this.li);
+                localStorage.removeItem("localcolor");
+                this.ms =[];
+                this.s = []
+            }
+        }
+    })
+</script>
+</body>
+</html>

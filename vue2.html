@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>demo1</title>
+    <link rel="stylesheet" href="css/index.css">
+    <script src="script/vue.js"></script>
+    <script src="script/jquery.js"></script>
+</head>
+<body>
+<!--//父组件传子组件-->
+<div id="b">
+    <h1 class="daiban">添加待办事项，按回车确认</h1>
+    <!--子组件向父组件传值，一定要记住，委托自定义事件放在子模板中-->
+    <model v-on:eee="msg"></model>
+    <div class="title">
+        <h4>待办事项</h4>
+        <button @click="clear" class="clear">
+            清空缓存
+        </button>
+        <button @click="del" class="del">
+            清除已完成
+        </button>
+    </div>
+    <!--vue2.0的将$index更新为(item,index)这种方式-->
+    <li v-for="(i,index) in li"
+        class="list"
+        :class="{'active':false}">
+        <div class="lists">
+                <span>
+                    {{i}}
+                </span>
+        </div>
+        <div @click="check(index)" class="end">
+                <span >
+                    {{b}}
+                </span>
+        </div>
+    </li>
+    <h4 class="end_title">已完成</h4>
+    <li v-for="(i,index) in lis"
+        class="list"
+        :class="{'active':true}">
+        <div class="lists">
+                <span>
+                    {{i}}
+                </span>
+        </div>
+        <div  class="end">
+                <span @click="uncheck(index)" class="end">
+                    {{a}}
+                </span>
+        </div>
+    </li>
+</div>
+<script>
+    //先定义一个数组用于存放列表内容,在定义一个字符串读取缓存
+    var arr=[],
+        arrs=[],
+        _color=[];
+    /*触发一个自定义函数，函数功能为载入时判断缓存情况，
+    如果有则加载缓存，如果没有清空数组*/
+    arrlocal();
+    function arrlocal() {
+        var stringon=localStorage.getItem("localon");
+        var stringun=localStorage.getItem("localun")
+        //如果有缓存，就将缓存转换为数组
+        if (stringon){
+            arr=stringon.split(",");
+        }
+        else{
+            arr = [];
+        }
+        if(stringun){
+            arr2 = stringun.split(",");
+        }else{
+            arr2 = [];
+        }
+    }
+    //注册组件
+    Vue.component('model',{
+        template:'' +
+        '<div :class="{active}" class="inp">' +
+        '<input v-model="aa"' +
+        ' v-on:keyup.13="dian"' +
+        ' @focus="focus" ' +
+        ' @blur="blur"' +
+        ' class="input"></div>',
+        data(){
+            return{
+                aa:'',
+                active:''
+            }
+        },
+        methods:{
+            focus() {
+                this.active ="active"
+            },
+            blur() {
+                this.active=''
+            },
+            //在回车事件中，将列表框的值发送父组件，并将输入框清空
+            dian:function () {
+                if (this.aa==''){
+                    alert("请输入待办事项")
+                }else{
+                    this.$emit('eee',this.aa);
+                    this.aa='';
+                }
+            }
+        }
+    });
+    new Vue({
+        el:'#b',
+        data:{
+            li:arr,
+            lis:arr2,
+            color:false,
+            a:'已完成',
+            b:'未完成',
+            s:[]
+        },
+        methods:{
+            /*通过自定义事件接收列表值，将每次输入的值添加到数组最前列
+            并且存入缓存local中。注意，localStorage会强制转换类型为string
+             */
+            msg:function (msg) {
+                arr.unshift(msg);
+                localStorage.setItem("localon",arr);
+            },
+            /*完成事件接收v-for循环时的下标，将下标存储在color对象中，
+            并将当前点击的对象存储变量，如果对象值不为true则添加，
+            如果有则取消，做一个切换效果。*/
+            check:function (index) {
+                this.lis.unshift(this.li[index]);
+                this.li.splice(index,1);
+                localStorage.setItem("localon",this.li);
+                localStorage.setItem("localun",this.lis)
+            },
+            uncheck:function (index) {
+                this.li.unshift(this.lis[index]);
+                this.lis.splice(index, 1);
+                localStorage.setItem("localon",this.li);
+                localStorage.setItem("localun",this.lis)
+            },
+            /*清除事件，将清除缓存以及数组清零*/
+            clear:function () {
+                localStorage.clear();
+                arrlocal();
+                this.li = arr;
+                this.lis = arr2
+            },
+            del:function () {
+                this.lis=[];
+                localStorage.removeItem("localun")
+            }
+        }
+    })
+</script>
+</body>
+</html>

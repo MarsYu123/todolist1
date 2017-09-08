@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>demo1</title>
+    <script src="script/vue.js"></script>
+    <script src="script/jquery.js"></script>
+</head>
+<body>
+<!--//父组件传子组件-->
+<!--<div id="app">
+    &lt;!&ndash;子组件必须绑定接受的属性为父组件的变量&ndash;&gt;
+    <mymodel v-bind:msg="b"></mymodel>
+    <input v-model="b">
+</div>
+<script>
+    Vue.component('mymodel',{
+        //使用props接受父组件传输值
+        props:['msg'],
+        template:
+        '<div><p v-for="i in msg">{{msg}}</p></div>',
+        data:function () {
+            return {
+                aa:''
+            }
+        },
+    });
+    var vm=new Vue({
+        el:'#app',
+        data:{
+            a:'1',
+            b:'',
+            d:{
+                a:1,b:2,c:3
+            }
+        }
+    })
+</script>-->
+<style>
+    *{
+        margin: 0;
+    }
+    #b{
+        margin: auto;
+        width: 500px;
+        height: auto;
+        text-align: left;
+    }
+    .daiban{
+        color:#ADD8E6;
+    }
+    .input{
+        font-size: 26px;
+        box-shadow: inset 0px 0px 10px -1px #ADD8E6;
+        outline: none;
+        border: none;
+        padding: 5px 3px;
+        margin: 10px 0;
+    }
+    .title{
+        height: 30px;
+        display: table-cell;
+        vertical-align: middle;
+        width: 300px;
+    }
+    .title h4{
+        float: left;
+        margin: auto;
+        font-size: 20px;
+        margin-right: 20px;
+    }
+    .title button{
+        border: 3px #eee solid;
+        background: #ffffff;
+        font-size: 15px;
+        outline: none;
+    }
+    .clear{
+        float: right;
+    }
+    .del{
+        float: right;
+    }
+    .title:after{
+        content: '';
+        clear: both;
+        display: block;
+    }
+    .list{
+        width: 320px;
+        height: 30px;
+        font-size: 18px;
+        line-height: 30px;
+        color: #5f5f5f;
+        list-style: none;
+    }
+    .list .lists span:before{
+        content:'';
+        display: block;
+        width: 0px;
+        border-top:2px #eee solid ;
+        position: relative;
+        bottom: -15px;
+        transition: all .7s;
+    }
+    .list:after{
+        content: '';
+        display: block;
+        clear: both;
+    }
+    .lists{
+        width: 200px;
+        display: inline-block;
+    }
+    .list.active .lists span{
+        color: #eee;
+        display: inline-block;
+    }
+    .list.active  .lists span:before{
+        width: auto;
+    }
+    .list .end{
+        display: inline-block;
+        cursor: pointer;
+        width: 80px;
+    }
+</style>
+<div id="b">
+    <h1 class="daiban">添加待办事项，按回车确认</h1>
+    <!--子组件向父组件传值，一定要记住，委托自定义事件放在子模板中-->
+    <model v-on:eee="msg"></model>
+    <div class="title">
+        <h4>待办事项</h4>
+        <button @click="clear" class="clear">
+            清空缓存
+        </button>
+        <button @click="del" class="del">
+            清除已完成
+        </button>
+    </div>
+    <!--vue2.0的将$index更新为(item,index)这种方式-->
+    <li v-for="(i,index) in li"
+        class="list"
+        :class="{'active':color[index]}">
+        <div class="lists">
+                <span>
+                    {{i}}
+                </span>
+        </div>
+        <div @click="check(index,i)" class="end">
+                <span >
+                    已完成
+                </span>
+        </div>
+    </li>
+</div>
+<script>
+    //先定义一个数组用于存放列表内容,在定义一个字符串读取缓存
+    var arr=[];
+    /*触发一个自定义函数，函数功能为载入时判断缓存情况，
+    如果有则加载缓存，如果没有清空数组*/
+    arrlocal();
+    function arrlocal() {
+        string=localStorage.getItem("localname");
+        //如果有缓存，就将缓存转换为数组
+        if (string){
+            arr=string.split(",");
+        }
+        else{
+            arr = [];
+        }
+    }
+    //注册组件
+    Vue.component('model',{
+        template:'<input v-model="aa" v-on:keyup.13="dian" class="input">',
+        data(){
+            return{
+                aa:''
+            }
+        },
+        methods:{
+            //在回车事件中，将列表框的值发送父组件，并将输入框清空
+            dian:function () {
+                if (this.aa==''){
+                    alert("请输入待办事项")
+                }else{
+                    this.$emit('eee',this.aa);
+                    this.aa='';
+                }
+            }
+        }
+    });
+    new Vue({
+        el:'#b',
+        data:{
+            li:arr,
+            color:[],
+            checked:[],
+        },
+        methods:{
+            /*通过自定义事件接收列表值，将每次输入的值添加到数组最前列
+            并且存入缓存local中。注意，localStorage会强制转换类型为string
+             */
+            msg:function (msg) {
+                arr.unshift(msg);
+                localStorage.setItem("localname",arr);
+            },
+            /*删除事件接收v-for循环时的下标，根据下标来删除被点击的节点，
+            相当于jq的this*/
+            check:function (index,i) {
+//                  this.li.splice(index, 1)
+                var _click=this.color[index];
+                if (!_click == true){
+                    this.$set(this.color,index, true);
+                    this.checked.unshift(index)
+                }else {
+                    this.$set(this.color,index, false);
+//                      this.checked.index =index
+                    this.checked.shift(index);
+                }
+                console.log(this.color)
+//                  console.log(this.li)
+            },
+            /*清除事件，将清除缓存以及数组清零*/
+            clear:function () {
+                localStorage.clear();
+                arrlocal();
+                this.li = arr;
+            },
+            del:function () {
+                for (var i in this.color){
+//                      delete this.li[i];
+                    var val=this.li[i];
+                    this.li.splice($.inArray(val),1)
+                    console.log(this.li)
+                }
+            }
+        }
+    })
+</script>
+</body>
+</html>
